@@ -36,7 +36,17 @@ group :doc do
 end
 
 # Use ActiveModel has_secure_password
-# gem 'bcrypt-ruby', '~> 3.1.2'
+gem 'bcrypt-ruby', '~> 3.1.2'
+
+# Generate fake content
+gem 'faker', group: [ :development, :test]
+
+# Break large result sets into multiple pages
+gem 'will_paginate'
+
+# Use Sunspot+Solr for search
+gem 'sunspot_rails'
+gem 'sunspot_solr', group: :development
 
 # Use unicorn as the app server
 # gem 'unicorn'

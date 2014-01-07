@@ -1,15 +1,18 @@
 class UsersController < ApplicationController
-  before_action :set_user, only: [:show, :edit, :update, :destroy]
+
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :follow, :unfollow, :followers, :followings]
+  before_action :authenticate_user, except: [:new, :create]
 
   # GET /users
   # GET /users.json
   def index
-    @users = User.all
+    @users = User.all.page(params[:page])
   end
 
   # GET /users/1
   # GET /users/1.json
   def show
+    @posts = @user.posts.page(params[:page])
   end
 
   # GET /users/new
@@ -25,16 +28,14 @@ class UsersController < ApplicationController
   # POST /users.json
   def create
     @user = User.new(user_params)
-
-    respond_to do |format|
       if @user.save
-        format.html { redirect_to @user, notice: 'User was successfully created.' }
-        format.json { render action: 'show', status: :created, location: @user }
+        sign_in @user
+        #flash[:notice] = "Welcome, #{user.name}!"
+        redirect_to root_path
       else
-        format.html { render action: 'new' }
-        format.json { render json: @user.errors, status: :unprocessable_entity }
+        render "new"
       end
-    end
+    
   end
 
   # PATCH/PUT /users/1
@@ -61,6 +62,38 @@ class UsersController < ApplicationController
     end
   end
 
+  def follow
+    if current_user? (@user)
+      flash[:error] = "You cannot follow yourself"
+    elsif current_user.following?(@user)
+      flash[:error] = "You already follow #{@user.name}"
+    else
+      unless current_user.follow(@user).nil?
+        flash[:success] = "You are following #{@user.name}"
+      else
+        flash[:error] = "Something went wrong. You cannot follow #{@user.name}"
+      end
+    end
+    redirect_to @user
+  end
+      
+  def unfollow
+    if current_user.unfollow(@user)
+      flash[:success] ="You no longer follow #{@user.name}"
+    else
+      flash[:error] = "You cannot unfollow #{@user.name}"
+    end
+    redirect_to @user
+  end
+
+  def followers
+    @users = @user.followers(params[:page])
+  end
+
+  def followings
+    @users = @user.followed_users
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_user
@@ -69,6 +102,6 @@ class UsersController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def user_params
-      params.require(:user).permit(:name, :email)
+      params.require(:user).permit(:name, :email, :password, :password_confirmation)
     end
 end
